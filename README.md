@@ -9,7 +9,7 @@ A multithreaded job queue written in zig.
 ## Installation
 
 ```bash
-  zig fetch --save git+https://github.com/ricknijhuis/ZLib.git
+  zig fetch --save git+https://github.com/ricknijhuis/ZLib.Jobs.git
 ```
 ```zig
 const zlib_dep = b.dependency("zlib", .{

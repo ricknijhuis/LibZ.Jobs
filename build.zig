@@ -17,21 +17,13 @@ pub fn build(b: *std.Build) void {
     });
     threading_mod.addImport("assert", assert_mod);
 
-    const lib_mod = b.createModule(.{
+    const lib_mod = b.addModule("threading", .{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
     });
     lib_mod.addImport("assert", assert_mod);
     lib_mod.addImport("threading", threading_mod);
-
-    const lib = b.addLibrary(.{
-        .linkage = .static,
-        .name = "LibZ.Jobs",
-        .root_module = lib_mod,
-    });
-
-    b.installArtifact(lib);
 
     const assert_unit_tests = b.addTest(.{
         .root_module = assert_mod,
@@ -40,7 +32,6 @@ pub fn build(b: *std.Build) void {
     const threading_unit_tests = b.addTest(.{
         .root_module = threading_mod,
     });
-
 
     const run_assert_unit_tests = b.addRunArtifact(assert_unit_tests);
     const run_threading_unit_tests = b.addRunArtifact(threading_unit_tests);
