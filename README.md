@@ -133,6 +133,7 @@ in more jobs than 1. The order of execution is defined by calling continueWith, 
     // Here we specify that continue2 job should run after continue1 job has been completed.
     jobs.continueWith(continue1, continue2);
 
+
     // We only need to schedule the root job, as once that is finished it will schedule all
     // continueWith jobs.
     jobs.schedule(root);
@@ -194,7 +195,44 @@ but by using finishWith you can have a single job that you can await to know the
         jobs.schedule(child);
     }
     jobs.schedule(root);
-
     // We only need to await root here to ensure all child jobs have been finished.
     jobs.wait(root);
+```
+
+## JobQueue: waitResult
+Using 'waitResult' provides a way to get the data of the job, it will be copied and cast to
+the provided type.
+```zig
+    const testing = std.testing;
+    const allocator = testing.allocator;
+    const config: JobQueueConfig = .{
+        .max_jobs_per_thread = 4,
+    };
+
+    // We want the value of foo once this job is finished.
+    const Job = struct {
+        foo: u32 = 0,
+        pub fn exec(self: *@This()) void {
+            self.foo += 1;
+        }
+    };
+
+    var jobs = try JobQueue(config).init(allocator);
+    defer jobs.deinit();
+
+    const handle = jobs.allocate(Job{});
+    jobs.schedule(handle);
+
+    try jobs.start();
+    
+    // Here we get the result from the job, it will be copied.
+    // other ways of retrieving the members of a job would be
+    // - calling 'wait' and after that calling 'result'
+    // - using a pointer and define the data outside the job
+    const result = jobs.waitResult(Job, handle);
+
+    try testing.expectEqual(1, result.foo);
+
+    defer jobs.join();
+    defer jobs.stop();
 ```

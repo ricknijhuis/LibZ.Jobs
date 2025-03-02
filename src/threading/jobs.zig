@@ -575,6 +575,7 @@ test "JobQueue: result of job can be returned directly by waitResult" {
         .max_jobs_per_thread = 4,
     };
 
+    // We want the value of foo once this job is finished.
     const Job = struct {
         foo: u32 = 0,
         pub fn exec(self: *@This()) void {
@@ -589,7 +590,11 @@ test "JobQueue: result of job can be returned directly by waitResult" {
     jobs.schedule(handle);
 
     try jobs.start();
-
+    
+    // Here we get the result from the job, it will be copied.
+    // other ways of retrieving the members of a job would be
+    // - calling 'wait' and after that calling 'result'
+    // - using a pointer and define the data outside the job
     const result = jobs.waitResult(Job, handle);
 
     try testing.expectEqual(1, result.foo);
@@ -746,3 +751,5 @@ test "JobQueue: continueWith jobs can be added and are run in order after comple
     const expected: [3]u8 = .{ 1, 2, 3 };
     try testing.expectEqualSlices(u8, &expected, result.result);
 }
+
+test "awa"
