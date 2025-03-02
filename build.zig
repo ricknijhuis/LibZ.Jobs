@@ -17,7 +17,7 @@ pub fn build(b: *std.Build) void {
     });
     threading_mod.addImport("assert", assert_mod);
 
-    const lib_mod = b.addModule("threading", .{
+    const lib_mod = b.addModule("ZLib.Jobs", .{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
