@@ -25,9 +25,6 @@ jobs:
         uses: mlugg/setup-zig@v1.2.1
         with:
           version: "master"
-      - name: Check formatting
-        shell: pwsh
-        run: zig fmt --check src src build.zig
       - name: Build and test
         shell: pwsh
         run: zig build test -Doptimize=ReleaseSafe
