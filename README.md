@@ -1,4 +1,4 @@
-# ZLib.Jobs
+# LibZ.Jobs
 A multithreaded job queue written in zig.
 
 ## Features
