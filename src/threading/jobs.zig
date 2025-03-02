@@ -4,6 +4,8 @@ const assert = @import("assert");
 
 const Atomic = std.atomic.Value;
 const Thread = std.Thread;
+const Mutex = std.Thread.Mutex;
+const Condition = std.Thread.Condition;
 const BoundedArray = std.BoundedArray;
 const BoundedArrayAligned = std.BoundedArrayAligned;
 const FixedDeque = @import("fixed_deque.zig").FixedDeque;
@@ -109,6 +111,11 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
         // All the threads, should be at most @min(getCpuCount() - 1, max_threads)
         threads: []Thread,
 
+        // mutexes: []Mutex,
+        mutex: Mutex = .{},
+
+        condition: Condition = .{},
+
         // Main thread ID, stored so we can assert start is called from the main thread.
         main_thread: Atomic(u64) = .{ .raw = 0 },
 
@@ -165,6 +172,7 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
         /// queue, meaning that not all jobs will be finished.
         pub fn stop(self: *Self) void {
             const was_running = self.is_running.swap(false, .monotonic);
+            self.condition.broadcast();
             debug.assert(was_running);
         }
 
@@ -172,7 +180,7 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
         /// will need to call stop, otherwise this will wait indefinatley
         pub fn join(self: *Self) void {
             debug.assert(self.isMainThread());
-
+            self.condition.broadcast();
             for (self.threads) |thread| {
                 thread.join();
             }
@@ -201,6 +209,8 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
             const job = self.getJobFromBuffer(handle);
 
             queue.push(job);
+
+            self.condition.broadcast();
         }
 
         /// awaits the job to finish and while not finished yet will work on other jobs.
@@ -282,6 +292,10 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
 
         fn getJob(self: *Self) ?*Job {
             var queue = self.getThreadQueue();
+
+            self.mutex.lock();
+            defer self.mutex.unlock();
+
             if (queue.pop()) |job| {
                 return job;
             }
@@ -295,7 +309,9 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
                 }
             }
 
-            Thread.sleep(config.idle_sleep_ns);
+            debug.print("Waiting on Thread: {}\n", .{thread_queue_index});
+            self.condition.wait(&self.mutex);
+            debug.print("Finished on Thread: {}\n", .{thread_queue_index});
 
             return null;
         }
@@ -310,9 +326,10 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
 
                 for (0..job.child_count) |i| {
                     const child_job = self.getJobFromBuffer(job.child_jobs[i]);
-                    const queue = self.getJobQueue(job.child_jobs[i]);
+                    const queue = self.getThreadQueue();
                     queue.push(child_job);
                 }
+                self.condition.broadcast();
             }
         }
 
@@ -590,7 +607,7 @@ test "JobQueue: result of job can be returned directly by waitResult" {
     jobs.schedule(handle);
 
     try jobs.start();
-    
+
     // Here we get the result from the job, it will be copied.
     // other ways of retrieving the members of a job would be
     // - calling 'wait' and after that calling 'result'
@@ -723,7 +740,6 @@ test "JobQueue: continueWith jobs can be added and are run in order after comple
         .result = &data,
         .index = &index,
     };
-
     const parent = jobs.allocate(parent_job);
 
     const child_job: Child = .{
@@ -751,5 +767,3 @@ test "JobQueue: continueWith jobs can be added and are run in order after comple
     const expected: [3]u8 = .{ 1, 2, 3 };
     try testing.expectEqualSlices(u8, &expected, result.result);
 }
-
-test "awa"
