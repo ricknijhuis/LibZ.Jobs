@@ -1,7 +1,7 @@
 .{
     .name = .libz_jobs,
     .version = "0.0.0",
-    .minimum_zig_version = "0.14.0",
+    .minimum_zig_version = "0.14.0-dev.3445+6c3cbb0c8",
     .fingerprint = 0x16fe4426811b3258, // Changing this has security and trust implications.
     .paths = .{
         "build.zig",

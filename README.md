@@ -7,16 +7,25 @@ A multithreaded job queue written in zig.
 - Lock free.
 
 ## Installation
-
-```bash
-  zig fetch --save git+https://github.com/ricknijhuis/ZLib.Jobs.git
-```
+build.zig.zon:
 ```zig
-const zlib_dep = b.dependency("zlib", .{
+.dependencies = .{
+    .jobs = .{
+        .url = "https://github.com/ricknijhuis/LibZ.Jobs/archive/main.tar.gz",
+        // .hash
+    },
+}
+    
+```
+build.zig: 
+```zig
+const jobs_deb = b.dependency("jobs", .{
     .target = target,
-    .optimize = optimize
+    .optimize = optimize,
 });
-const zlib_lib = zlib_dep.artifact("ZLib");
+const jobs_mod = jobs_deb.module("ZLib.Jobs"); 
+// add the import to the module where you need it.
+your_mod.addImport("threading", jobs_mod);
 ```
 ## Usage/Examples
 
