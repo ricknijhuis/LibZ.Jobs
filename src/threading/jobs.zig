@@ -590,7 +590,7 @@ test "JobQueue: result of job can be returned directly by waitResult" {
     jobs.schedule(handle);
 
     try jobs.start();
-    
+
     // Here we get the result from the job, it will be copied.
     // other ways of retrieving the members of a job would be
     // - calling 'wait' and after that calling 'result'
@@ -751,5 +751,3 @@ test "JobQueue: continueWith jobs can be added and are run in order after comple
     const expected: [3]u8 = .{ 1, 2, 3 };
     try testing.expectEqualSlices(u8, &expected, result.result);
 }
-
-test "awa"
