@@ -180,8 +180,8 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
         /// will need to call stop, otherwise this will wait indefinatley
         pub fn join(self: *Self) void {
             debug.assert(self.isMainThread());
-            self.condition.broadcast();
             for (self.threads) |thread| {
+                self.condition.broadcast();
                 thread.join();
             }
         }
@@ -306,8 +306,9 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
 
         fn getJob(self: *Self) ?*Job {
             var queue = self.getThreadQueue();
-
+            debug.print("Locking on Thread: {}\n", .{thread_queue_index});
             self.mutex.lock();
+            debug.print("Locked; on Thread: {}\n", .{thread_queue_index});
             defer self.mutex.unlock();
 
             if (queue.pop()) |job| {
@@ -343,7 +344,7 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
                     const queue = self.getThreadQueue();
                     queue.push(child_job);
                 }
-                self.condition.broadcast();
+                self.condition.signal();
             }
         }
 
