@@ -197,6 +197,8 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
 
         /// Puts the job in a queue so it can be picked up by a thread
         pub fn schedule(self: *Self, handle: JobHandle) void {
+            debug.assert(handle.thread == thread_queue_index);
+
             const queue = self.getThreadQueue();
             const job = self.getJobFromBuffer(handle);
 
@@ -205,6 +207,8 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
 
         /// awaits the job to finish and while not finished yet will work on other jobs.
         pub fn wait(self: *Self, handle: JobHandle) void {
+            debug.assert(handle.thread == thread_queue_index);
+
             const job = self.getJobFromBuffer(handle);
             while (!job.isCompleted()) {
                 self.execNextJob();
@@ -214,6 +218,8 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
         /// awaits the job to finish and while not finished yet will work on other jobs. This will
         /// return the result of the job. A simpler and slightly faster way of calling 'wait' and then 'result'.
         pub fn waitResult(self: *Self, T: type, handle: JobHandle) T {
+            debug.assert(handle.thread == thread_queue_index);
+
             const job = self.getJobFromBuffer(handle);
             while (!job.isCompleted()) {
                 self.execNextJob();
@@ -231,6 +237,9 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
         /// adds a job that will run after the main job has completed, multiple jobs can be added, they
         /// will be executed after the main job in same order of calling this function.
         pub fn continueWith(self: *Self, handle: JobHandle, continuation_handle: JobHandle) void {
+            debug.assert(handle.thread == thread_queue_index);
+            debug.assert(handle.thread == continuation_handle.thread);
+
             const parent = self.getJobFromBuffer(handle);
             const prev = @atomicRmw(u16, &parent.child_count, .Add, 1, .monotonic);
             parent.child_jobs[prev] = continuation_handle;
@@ -241,6 +250,9 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
         /// guaranteed to be finished as well, though it does not enforce execution order. the 'finish job' function could be executed
         /// as first but will not be set to completed until all related jobs have finished executing.
         pub fn finishWith(self: *Self, handle: JobHandle, finish_handle: JobHandle) void {
+            debug.assert(handle.thread == thread_queue_index);
+            debug.assert(handle.thread == finish_handle.thread);
+
             const child = self.getJobFromBuffer(handle);
             const parent = self.getJobFromBuffer(finish_handle);
             _ = @atomicRmw(u16, &parent.job_count, .Add, 1, .monotonic);
@@ -259,6 +271,8 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
 
         /// returns whether the passed job has been completed
         pub fn isCompleted(self: *const Self, handle: JobHandle) bool {
+            debug.assert(thread_queue_index == handle.thread);
+
             const job = self.getJobFromBufferConst(handle);
             return job.isCompleted();
         }
@@ -310,7 +324,7 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
 
                 for (0..job.child_count) |i| {
                     const child_job = self.getJobFromBuffer(job.child_jobs[i]);
-                    const queue = self.getJobQueue(job.child_jobs[i]);
+                    const queue = self.getThreadQueue();
                     queue.push(child_job);
                 }
             }
@@ -318,10 +332,6 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
 
         inline fn getThreadQueue(self: *Self) *Deque {
             return &self.queues[thread_queue_index];
-        }
-
-        inline fn getJobQueue(self: *Self, handle: JobHandle) *Deque {
-            return &self.queues[handle.thread];
         }
 
         inline fn getThreadJobBuffer(self: *Self) *Jobs {
