@@ -145,4 +145,47 @@ This sample shows how you can define a single job that you can use to await mult
 One use case for this could be updating a large buffer of data. you can split the buffer so each job can work on part of it.
 but by using finishWith you can have a single job that you can await to know the entire buffer is updated.
 ```zig
+
+    const testing = std.testing;
+    const allocator = testing.allocator;
+    const config: JobQueueConfig = .{
+        .max_jobs_per_thread = 4,
+    };
+    var jobs = try JobQueue(config).init(allocator);
+    defer jobs.deinit();
+
+    var buffer: [256]u8 = undefined;
+
+    const UpdateBufferJob = struct {
+        value: u8,
+        slice: []u8,
+        pub fn exec(self: *@This()) void {
+            @memset(self.slice, self.value);
+        }
+    };
+
+    // Slice size for each job to work on.
+    const size = buffer.len / config.max_jobs_per_thread;
+
+    // Lets give the root job also something to do, it will update the first section of the buffer.
+    const root = jobs.allocate(UpdateBufferJob{ .value = 0, .slice = buffer[0..size] });
+
+    // We are still responsible of scheduling all the child jobs.
+    // This is a very efficient way of scheduling them, this because we now can
+    // already work on jobs while scheduling them on the main thread.
+    // We skip 0 as that will be the parent job
+    for (1..config.max_jobs_per_thread) |i| {
+        const offset = size * i;
+        const end = offset + size;
+        const child = jobs.allocate(UpdateBufferJob{ .value = @intCast(i), .slice = buffer[offset..end] });
+        // Here we basically say, if root is finished, so will this job.
+        jobs.finishWith(child, root);
+        // Let's schedule it so our worker threads can already pick it up while
+        // we are continue scheduling on the main thread.
+        jobs.schedule(child);
+    }
+    jobs.schedule(root);
+
+    // We only need to await root here to ensure all child jobs have been finished.
+    jobs.wait(root);
 ```

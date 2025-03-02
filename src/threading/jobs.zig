@@ -310,7 +310,7 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
 
                 for (0..job.child_count) |i| {
                     const child_job = self.getJobFromBuffer(job.child_jobs[i]);
-                    const queue = self.getThreadQueue();
+                    const queue = self.getJobQueue(job.child_jobs[i]);
                     queue.push(child_job);
                 }
             }
@@ -318,6 +318,10 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
 
         inline fn getThreadQueue(self: *Self) *Deque {
             return &self.queues[thread_queue_index];
+        }
+
+        inline fn getJobQueue(self: *Self, handle: JobHandle) *Deque {
+            return &self.queues[handle.thread];
         }
 
         inline fn getThreadJobBuffer(self: *Self) *Jobs {
@@ -672,7 +676,7 @@ test "JobQueue: continueWith jobs can be added and are run in order after comple
     const testing = std.testing;
     const allocator = testing.allocator;
     const config: JobQueueConfig = .{
-        .max_jobs_per_thread = 4,
+        .max_jobs_per_thread = 8,
     };
     var jobs = try JobQueue(config).init(allocator);
     defer jobs.deinit();
@@ -706,7 +710,7 @@ test "JobQueue: continueWith jobs can be added and are run in order after comple
 
         pub fn exec(self: *@This()) void {
             self.result[self.index.*] = 3;
-            // self.index.* += 1;
+            self.index.* += 1;
         }
     };
 
@@ -738,7 +742,7 @@ test "JobQueue: continueWith jobs can be added and are run in order after comple
 
     jobs.schedule(parent);
 
-    const result = jobs.waitResult(Parent, parent);
+    const result = jobs.waitResult(Child1, child1);
     const expected: [3]u8 = .{ 1, 2, 3 };
     try testing.expectEqualSlices(u8, &expected, result.result);
 }
