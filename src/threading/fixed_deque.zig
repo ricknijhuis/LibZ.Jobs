@@ -31,6 +31,9 @@ pub fn FixedDeque(comptime T: type, comptime size: usize) type {
             const b = self.bottom;
             debug.assert((b - self.top) < size);
             self.buffer[@intCast(b & mask)] = value;
+
+            // we need to ensure the job is written before publishing b+1 is published, maybe we could use @atomicRmw instead?
+            asm volatile ("" ::: "memory");
             self.bottom = b + 1;
         }
 
@@ -60,7 +63,11 @@ pub fn FixedDeque(comptime T: type, comptime size: usize) type {
 
         pub fn steal(self: *Self) ?T {
             const t = self.top;
+
+            // ensure top is read before bottom, maybe we could use @atomicLoad instead.
+            asm volatile ("" ::: "memory");
             const b = self.bottom;
+
             if (t < b) {
                 const item = self.buffer[@intCast(t & mask)];
                 if (@cmpxchgStrong(i32, &self.top, t, t + 1, .seq_cst, .seq_cst) != null) {
