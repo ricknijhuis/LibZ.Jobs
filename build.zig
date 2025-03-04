@@ -61,6 +61,7 @@ pub fn build(b: *std.Build) void {
     benchmark.root_module.addImport("zbench", zbench_mod);
     benchmark.root_module.addImport("libz", lib_mod);
 
+    b.installArtifact(benchmark);
     const benchmark_run = b.addRunArtifact(benchmark);
     benchmark_step.dependOn(&benchmark_run.step);
 }
