@@ -39,4 +39,18 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_assert_unit_tests.step);
     test_step.dependOn(&run_threading_unit_tests.step);
+
+    const exe_mod = b.createModule(.{
+        .root_source_file = b.path("src/investigation/main.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    exe_mod.addImport("libz", lib_mod);
+
+    const exe = b.addExecutable(.{
+        .name = "investigation",
+        .root_module = exe_mod,
+    });
+
+    b.installArtifact(exe);
 }
