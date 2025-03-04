@@ -236,3 +236,33 @@ the provided type.
     defer jobs.join();
     defer jobs.stop();
 ```
+
+# Benchmarking
+Here are some benchmarks in comparison to the std.Thread.Pool.
+All benchmark code can be found in the src/benchmarks directory and run using:
+```shell
+zig build benchmark -Dbenchmark=basic -Doptimize=ReleaseFast
+```
+For benchmarking the following library is used: [zBench](https://github.com/hendriknielaender/zBench)
+All benchmarks are executed on the following system:
+CPU: AMD Ryzen™ 7 5800X × 16
+GPU: NVIDEA GTX1080TI
+RAM: 32GB DDR4 2133 MHz
+
+## Benchmark: Basic
+Here we have the simplest of benchmark, allocate and schedule 2047 empty jobs.
+Here we compare it with the std.Thread.Pool using a WaitGroup. This benchmark is meant to show the overhead
+of allocating and scheduling jobs. As the LibZ jobs preallocates everything I tried making it as even as possible
+by using a preallocated buffer with a std.heap.FixedBufferAllocator and also using the std.heap.SmpAllocator.
+As shown here the allocator doesn't matter too much for the std implementation.
+
+As the difference is very large I am curious to see if there is some improvements I could do in my usage with the std.Thread.Pool benchmark.
+
+Scheduling 2048 empty jobs:
+```shell
+benchmark              runs     total time     time/run (avg ± σ)     (min ... max)                p75        p99        p995      
+-----------------------------------------------------------------------------------------------------------------------------
+LibZ.Jobs              100      12.593ms       125.931us ± 32.471us   (57.35us ... 187.639us)      158.009us  187.639us  187.639us 
+std.Thread.Pool: Fixed 100      154.913ms      1.549ms ± 35.235us     (1.511ms ... 1.704ms)        1.555ms    1.704ms    1.704ms   
+std.Thread.Pool: Smp   100      161.637ms      1.616ms ± 52.926us     (1.557ms ... 1.886ms)        1.622ms    1.886ms    1.886ms   
+```
