@@ -243,11 +243,11 @@ All benchmark code can be found in the src/benchmarks directory and run using:
 ```shell
 zig build benchmark -Dbenchmark=basic -Doptimize=ReleaseFast
 ```
-For benchmarking the following library is used: [zBench](https://github.com/hendriknielaender/zBench)
-All benchmarks are executed on the following system:
-CPU: AMD Ryzen™ 7 5800X × 16
-GPU: NVIDEA GTX1080TI
-RAM: 32GB DDR4 2133 MHz
+For benchmarking the following library is used: [zBench](https://github.com/hendriknielaender/zBench)   
+All benchmarks are executed on the following system:   
+CPU: AMD Ryzen™ 7 5800X × 16   
+GPU: NVIDEA GTX1080TI   
+RAM: 32GB DDR4 2133 MHz   
 
 ## Benchmark: Basic
 Here we have the simplest of benchmark, allocate and schedule 2047 empty jobs.
