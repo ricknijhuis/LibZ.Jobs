@@ -15,7 +15,7 @@ pub const JobHandle = packed struct(u16) {
 
 pub const JobQueueConfig = struct {
     // For each thread a seperate queue will be created, this config dictates the size of that queue.
-    max_jobs_per_thread: u16,
+    max_jobs_per_thread: u11,
 
     // Dictates max number of threads
     max_threads: u16 = 32,
@@ -28,9 +28,6 @@ pub const JobQueueConfig = struct {
 pub fn JobQueue(comptime config: JobQueueConfig) type {
     // Should atleast have 2 threads to be able to spawn
     comptime debug.assert(config.max_threads >= 2);
-
-    // For optimization we only allow a count of a multiple of 2
-    comptime debug.assert(assert.isPowerOf2(config.max_jobs_per_thread));
 
     const ExecData = [76]u8;
     const ExecFn = *const fn (*ExecData) void;
@@ -80,7 +77,7 @@ pub fn JobQueue(comptime config: JobQueueConfig) type {
     };
 
     return struct {
-        pub const max_jobs_per_thread = config.max_jobs_per_thread;
+        pub const max_jobs_per_thread = std.math.ceilPowerOfTwoPromote(u11, config.max_jobs_per_thread);
         pub const sleep_time_ns = config.idle_sleep_ns;
         const max_thread_count = config.max_threads;
         const max_thread_queue_count = max_thread_count + 1;
