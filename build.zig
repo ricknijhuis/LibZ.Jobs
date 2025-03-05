@@ -53,7 +53,9 @@ pub fn build(b: *std.Build) void {
     const benchmark = b.addExecutable(.{
         .name = @tagName(benchmark_option),
         .root_module = b.createModule(.{
-            .root_source_file = b.path(benchmark_dir ++ @tagName(benchmark_option) ++ "/main.zig"),
+            .root_source_file = b.path(
+                b.fmt("{s}{s}{s}", .{ benchmark_dir, @tagName(benchmark_option), "/main.zig" }),
+            ),
             .target = target,
             .optimize = optimize,
         }),
@@ -67,6 +69,8 @@ pub fn build(b: *std.Build) void {
 }
 
 const benchmark_dir = "src/benchmarks/";
+
 const Benchmark = enum {
     basic,
+    basic_ordered,
 };
