@@ -315,6 +315,7 @@ std.Thread.Pool
 | 46435            | 43       |
 | 46436            | 90       |
 | **Total Result** | **2047** |
+
 See the code [here](src/benchmarks/basic/main.zig)
 
 ## Benchmark: Basic ordered
