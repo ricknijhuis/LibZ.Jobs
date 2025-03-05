@@ -22,9 +22,7 @@ var jobs: Jobs = undefined;
 var std_thread_pool: Thread.Pool = undefined;
 
 pub const Job = struct {
-    pub fn exec(_: *Job) void {
-        std.mem.doNotOptimizeAway(.{});
-    }
+    pub fn exec(_: *Job) void {}
 };
 
 fn benchmarkLibZJobs(_: std.mem.Allocator) void {
