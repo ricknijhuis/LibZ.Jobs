@@ -266,3 +266,4 @@ LibZ.Jobs              100      12.593ms       125.931us ± 32.471us   (57.35us 
 std.Thread.Pool: Fixed 100      154.913ms      1.549ms ± 35.235us     (1.511ms ... 1.704ms)        1.555ms    1.704ms    1.704ms   
 std.Thread.Pool: Smp   100      161.637ms      1.616ms ± 52.926us     (1.557ms ... 1.886ms)        1.622ms    1.886ms    1.886ms   
 ```
+See the code [here](src/benchmarks/basic/main.zig)
