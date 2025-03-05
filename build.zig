@@ -73,4 +73,5 @@ const benchmark_dir = "src/benchmarks/";
 const Benchmark = enum {
     basic,
     basic_ordered,
+    different_job_sizes,
 };
