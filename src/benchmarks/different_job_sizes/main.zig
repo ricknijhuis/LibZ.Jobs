@@ -9,7 +9,13 @@ const JobHandle = libz.JobHandle;
 const Thread = std.Thread;
 const ThreadPool = ThreadPool;
 
-const Jobs = JobQueue(.{ .idle_sleep_ns = 10, .max_jobs_per_thread = std.math.maxInt(u11) });
+const thread_count = 16;
+
+const Jobs = JobQueue(.{
+    .max_threads = thread_count,
+    .idle_sleep_ns = 10,
+    .max_jobs_per_thread = std.math.maxInt(u11),
+});
 
 // The allocator type won't matter for this test as we only allocate during init
 var smpa = std.heap.smp_allocator;
@@ -55,6 +61,7 @@ pub fn main() !void {
     var bench = zbench.Benchmark.init(std.heap.page_allocator, .{});
     defer bench.deinit();
 
+    try stdout.print(":{}", .{try Thread.getCpuCount()});
     try stdout.print("\nScheduling {} empty jobs:\n", .{Jobs.max_jobs_per_thread});
 
     try bench.add("std.Thread.Pool: Fixed", benchmarkStdFixedBufferAllocator, .{
@@ -91,16 +98,18 @@ pub fn beforeEach() void {
 }
 
 pub fn beforeEachStdFixedBufferAllocator() void {
-    ba_buffer = smpa.alloc(u8, 128 * 2048) catch @panic("Out of Memory");
+    ba_buffer = smpa.alloc(u8, thread_count * 128 * 2048) catch @panic("Out of Memory");
     ba = std.heap.FixedBufferAllocator.init(ba_buffer);
     std_thread_pool.init(.{
         .allocator = ba.allocator(),
+        .n_jobs = thread_count,
     }) catch @panic("Unable to spawn std thread pool");
 }
 
 pub fn beforeEachStdSmpAllocator() void {
     std_thread_pool.init(.{
         .allocator = smpa,
+        .n_jobs = thread_count,
     }) catch @panic("Unable to spawn std thread pool");
 }
 

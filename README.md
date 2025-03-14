@@ -23,7 +23,7 @@ const jobs_deb = b.dependency("jobs", .{
     .target = target,
     .optimize = optimize,
 });
-const jobs_mod = jobs_deb.module("ZLib.Jobs"); 
+const jobs_mod = jobs_deb.module("libz_jobs"); 
 // add the import to the module where you need it.
 your_mod.addImport("threading", jobs_mod);
 ```
